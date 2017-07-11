@@ -111,6 +111,7 @@ namespace co2
         using handle_type = coroutine_handle;
 
         struct promise_type;
+        template <typename G> friend class awaiter;
 
         coroutine() noexcept : _ptr() {}
 
@@ -410,8 +411,11 @@ namespace co2 { namespace detail
         };
     }
 
-    template<class T>
-    using storage_for = std::aligned_storage_t<sizeof(T), alignof(T)>;
+    template <typename T>
+    using aligned_storage_t = typename std::aligned_storage<sizeof(T), alignof(T)>::type;
+
+    template <typename T>
+    using storage_for = aligned_storage_t<T>;
 
     struct exception_storage
     {
@@ -563,8 +567,10 @@ namespace co2 { namespace detail
     };
 
     template<class Promise, class Locals, class Alloc, std::size_t Tmp>
-    constexpr std::size_t frame_size =
-        sizeof(frame_size_helper<Promise, Locals, Alloc, Tmp>);
+    constexpr size_t frame_size()
+    {
+        return sizeof(frame_size_helper<Promise, Locals, Alloc, Tmp>);
+    }
 
     template<class T>
     using promise_t = typename T::promise_type;
@@ -701,14 +707,17 @@ namespace co2
     constexpr detail::await_suspend_fn await_suspend{};
     constexpr detail::await_resume_fn await_resume{};
 
+    template <typename T>
+    using add_lvalue_reference_t = typename std::add_lvalue_reference<T>::type;
+
     template<class T>
     struct await_result
     {
-        using type = decltype(await_resume(std::declval<std::add_lvalue_reference_t<T>>()));
+        using type = decltype(await_resume(std::declval<add_lvalue_reference_t<T>>()));
     };
 
     template<class T>
-    using await_result_t = decltype(await_resume(std::declval<std::add_lvalue_reference_t<T>>()));
+    using await_result_t = decltype(await_resume(std::declval<add_lvalue_reference_t<T>>()));
 
     namespace detail
     {

@@ -225,7 +225,6 @@ __Headers__
 * `#include <co2/sync/when_all.hpp>`
 * `#include <co2/sync/when_any.hpp>`
 * `#include <co2/blocking.hpp>`
-* `#include <co2/adapted/boost_future.hpp>`
 * `#include <co2/adapted/boost_optional.hpp>`
 * `#include <co2/utility/stack_allocator.hpp>`
 

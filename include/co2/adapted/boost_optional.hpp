@@ -8,7 +8,7 @@
 #define CO2_ADAPTED_BOOST_OPTIONAL_HPP_INCLUDED
 
 #include <co2/coroutine.hpp>
-#include <boost/optional/optional.hpp>
+#include <boost/optional/optional_io.hpp>
 
 namespace co2 { namespace boost_optional_detail
 {
@@ -77,7 +77,7 @@ namespace boost
     }
 
     template<class T>
-    decltype(auto) await_resume(optional<T> const& opt)
+    auto await_resume(optional<T> const& opt) -> decltype(opt.get())
     {
         return opt.get();
     }

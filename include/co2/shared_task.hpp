@@ -53,8 +53,14 @@ namespace co2 { namespace task_detail
         }
     };
 
+    template <typename T>
+    using add_lvalue_reference_t = typename std::add_lvalue_reference<T>::type;
+
+    template <typename T>
+    using add_const_t = typename std::add_const<T>::type;
+
     template<class T>
-    using cref_t = std::add_lvalue_reference_t<std::add_const_t<T>>;
+    using cref_t = add_lvalue_reference_t<add_const_t<T>>;
 }}
 
 namespace co2

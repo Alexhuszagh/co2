@@ -92,9 +92,9 @@ namespace co2 { namespace blocking_detail
         {
             CO2_SUSPEND([&](co2::coroutine<>& c) { return co2::await_suspend(a, c); });
         } CO2_END
-            
+
         using frame_storage = detail::fixed_storage<detail::frame_size<
-            promise_type, void*, detail::fixed_allocator_base, 0>>;
+            promise_type, void*, detail::fixed_allocator_base, 0>()>;
 
         promise_type* promise;
     };
@@ -187,8 +187,8 @@ namespace co2
         return wait_until(std::forward<Awaitable>(a), std::chrono::steady_clock::now() + rel_time);
     }
 
-    template<class Awaitable>
-    inline decltype(auto) get(Awaitable&& a)
+    template <class Awaitable>
+    inline auto get(Awaitable&& a) -> decltype(await_resume(a))
     {
         wait(a);
         return await_resume(a);

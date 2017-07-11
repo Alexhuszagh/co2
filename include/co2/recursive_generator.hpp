@@ -16,9 +16,41 @@ namespace co2
     template<class T>
     struct recursive_generator
     {
+        struct promise_type;
+        template <typename G> struct awaiter;
+
+        friend class promise_type;
+        template <typename G> friend class awaiter;
+
+        template <typename Generator>
+        struct awaiter
+        {
+            bool await_ready() noexcept
+            {
+                return !_child._promise;
+            }
+
+            void await_suspend(coroutine<promise_type> const& coro) noexcept
+            {
+                auto head = coro.promise()._head;
+                head->swap(_child._promise->_parent);
+                head->promise()._head = head;
+                (*head)();
+            }
+
+            void await_resume()
+            {
+                if (_child._promise)
+                    _child._promise->rethrow_exception();
+            }
+
+            Generator _child;
+        };
+
         struct promise_type
         {
             using val_t = detail::wrap_reference_t<T>;
+            template <typename G> friend class awaiter;
 
             recursive_generator get_return_object(coroutine<promise_type>& coro)
             {
@@ -64,6 +96,12 @@ namespace co2
                 new(&_data) std::exception_ptr(std::move(e));
             }
 
+            template <typename Generator>
+            static auto yield_from(Generator&& child) -> decltype(awaiter<Generator>{std::forward<Generator>(child)})
+            {
+                return awaiter<Generator>{std::forward<Generator>(child)};
+            }
+
             suspend_always yield_value(T&& t)
             {
                 return yield_value<T>(std::forward<T>(t));
@@ -78,12 +116,12 @@ namespace co2
                 return {};
             }
 
-            auto yield_value(recursive_generator<T>&& child)
+            auto yield_value(recursive_generator<T>&& child) -> decltype(yield_from(std::move(child)))
             {
                 return yield_from(std::move(child));
             }
 
-            auto yield_value(recursive_generator<T>& child)
+            auto yield_value(recursive_generator<T>& child) -> decltype(yield_from(child))
             {
                 return yield_from(child);
             }
@@ -116,35 +154,6 @@ namespace co2
                     _data.value.~val_t();
             }
 
-            template<class Generator>
-            static auto yield_from(Generator&& child)
-            {
-                struct awaiter
-                {
-                    bool await_ready() noexcept
-                    {
-                        return !_child._promise;
-                    }
-                
-                    void await_suspend(coroutine<promise_type> const& coro) noexcept
-                    {
-                        auto head = coro.promise()._head;
-                        head->swap(_child._promise->_parent);
-                        head->promise()._head = head;
-                        (*head)();
-                    }
-                
-                    void await_resume()
-                    {
-                        if (_child._promise)
-                            _child._promise->rethrow_exception();
-                    }
-                
-                    Generator _child;
-                };
-                return awaiter{std::forward<Generator>(child)};
-            }
-            
             coroutine<promise_type>* _head = &_parent;
             coroutine<promise_type> _parent;
             detail::storage<val_t> _data;

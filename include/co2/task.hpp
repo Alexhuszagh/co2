@@ -97,8 +97,11 @@ namespace co2
         CO2_RETURN();
     } CO2_END
 
+    template <typename T>
+    using decay_t = typename std::decay<T>::type;
+
     template<class T>
-    inline auto make_ready_task(T&& val) CO2_BEG(task<std::decay_t<T>>, (val), CO2_TEMP_SIZE(0);)
+    inline auto make_ready_task(T&& val) CO2_BEG(task<decay_t<T>>, (val), CO2_TEMP_SIZE(0);)
     {
         CO2_RETURN(std::forward<T>(val));
     } CO2_END
